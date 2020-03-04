@@ -1,0 +1,65 @@
+
+library(quantmod)
+library(ggplot2)
+library(scales)
+library(forecast)
+library(readr)
+library(xts)
+#install.packages("gridExtra")
+library(gridExtra)
+#install.packages("tidyverse")
+library(tidyverse)
+
+
+# dowjones
+getSymbols("^DJI", srch = "yahoo", from = '2019-06-02')
+# Delta airlines
+getSymbols("DAL", srch = "yahoo", from = '2019-06-02')
+#nasdaq
+getSymbols("^IXIC", srch = "yahoo", from = '2019-06-02')
+
+djia = DJI[,4]
+delta = DAL[,4]
+nasdaq = IXIC[,4]
+
+#function for variation
+#função de variação
+#variação
+variacao_percentual <- function(time_series) {
+  variacao <- diff(time_series)
+  anterior <- dplyr::lag(time_series)
+  
+  variacao / anterior
+}
+
+#variação percentual
+# percentual variaiton
+djia2 <- variacao_percentual(djia)
+delta2 <- variacao_percentual(delta)
+nasdaq2 <- variacao_percentual(nasdaq)
+
+todas_series <- cbind(djia2, delta2, nasdaq2) %>% 
+  as_tibble() %>% 
+  mutate(date = index(djia2)) %>% 
+  gather(indice, valor, -date)
+  
+  # corona virus data
+  
+primeira <- coronavirus::coronavirus %>% 
+pull(date) %>% 
+min()
+
+#data visualization
+
+ggplot(todas_series, aes(date, valor, col = indice)) +
+  geom_vline(xintercept = primeira, lty = 2) +
+  annotate("text", primeira - 60, -0.05, label = "First case Corona") + 
+  geom_segment(
+    x = primeira - 60, y = -0.048, xend = primeira-5, yend = -0.03,
+    col = "black",
+    arrow = arrow(length = unit(0.03, "npc"))
+    
+  ) +
+  geom_line()
+
+
